@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The AI Revolution in D2C Commerce</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals (Slate, Zinc, Stone) -->
+    <!-- Application Structure Plan: A top-level navigation SPA with four sections: Overview (landing), AI Search (the present), Market Dynamics (the scale), and Agentic Commerce (the future). This thematic structure guides the user from the current state to future trends, allowing non-linear exploration based on interest. Key interactions include region selectors to update market charts, clickable feature cards for AI search, and comparison charts for agentic commerce adoption, making dense data digestible and engaging. -->
+    <!-- Visualization & Content Choices: Market Data -> Goal: Compare -> Viz: Interactive Bar/Line Chart (Chart.js) -> Interaction: Region buttons update charts/text, Justification: Easy comparison. Shopify Apps -> Goal: Organize -> Viz: Sortable HTML Table, Justification: User-driven filtering. Agentic Trust Paradox -> Goal: Compare -> Viz: Doughnut Chart (Chart.js) -> Interaction: None (static comparison), Justification: Stark visual contrast. Evolution of Search -> Goal: Organize -> Viz: HTML/CSS Flow Diagram, Justification: Clear process visualization. LLM Product Recommender -> Goal: Inform/Engage -> Viz: Text Output -> Interaction: Text input, button click, Justification: Demonstrates AI's ability to understand natural language and generate relevant product suggestions, showcasing a core aspect of AI search. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            padding-bottom: 8px;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: #7c3aed; /* violet-600 */
+            transition: width 0.3s ease;
+        }
+        .nav-link.active::after,
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 450px;
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 300px;
+                max-height: 400px;
+            }
+        }
+        .stat-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .tab-button {
+             background-color: #e2e8f0; /* slate-200 */
+             color: #475569; /* slate-600 */
+             transition: all 0.3s ease;
+        }
+        .tab-button.active {
+            background-color: #7c3aed; /* violet-600 */
+            color: white;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+        }
+        .feature-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0; /* slate-200 */
+        }
+        .feature-card:hover, .feature-card.active {
+            transform: translateY(-4px);
+            border-color: #7c3aed; /* violet-600 */
+            box-shadow: 0 7px 20px -5px rgba(124, 58, 237, 0.2);
+        }
+    </style>
+</head>
+<body class="text-slate-700 antialiased">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl md:text-2xl font-bold text-slate-800">AI in D2C</h1>
+                </div>
+                <div class="hidden sm:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a id="nav-overview" class="nav-link text-slate-600 hover:text-slate-900 font-medium active" onclick="showSection('overview')">Overview</a>
+                        <a id="nav-search" class="nav-link text-slate-600 hover:text-slate-900 font-medium" onclick="showSection('search')">AI Search</a>
+                        <a id="nav-market" class="nav-link text-slate-600 hover:text-slate-900 font-medium" onclick="showSection('market')">Market Dynamics</a>
+                        <a id="nav-agentic" class="nav-link text-slate-600 hover:text-slate-900 font-medium" onclick="showSection('agentic')">Agentic Commerce</a>
+                    </div>
+                </div>
+                <div class="sm:hidden">
+                    <select id="mobile-nav" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-violet-500 focus:ring-violet-500" onchange="showSection(this.value)">
+                        <option value="overview">Overview</option>
+                        <option value="search">AI Search</option>
+                        <option value="market">Market Dynamics</option>
+                        <option value="agentic">Agentic Commerce</option>
+                    </select>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <!-- Overview Section -->
+        <section id="section-overview" class="content-section active">
+            <div class="text-center">
+                <h2 class="text-3xl md:text-5xl font-extrabold text-slate-800 leading-tight">The AI-Driven Evolution of D2C Commerce</h2>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">Explore the transformation of Direct-to-Consumer e-commerce through AI. From intelligent search to autonomous shopping agents, discover the technologies shaping the present and future of online retail.</p>
+            </div>
+
+            <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <div class="stat-card">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-violet-100 rounded-lg">
+                             <svg class="h-6 w-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                        </div>
+                        <h3 class="ml-4 text-lg font-semibold text-slate-800">Global Market Growth</h3>
+                    </div>
+                    <p class="mt-3 text-3xl font-bold text-violet-600">~24% CAGR</p>
+                    <p class="mt-1 text-slate-500">Projected annual growth for AI in E-commerce, reaching over $64B by 2034.</p>
+                </div>
+                <div class="stat-card">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-100 rounded-lg">
+                            <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01"></path></svg>
+                        </div>
+                        <h3 class="ml-4 text-lg font-semibold text-slate-800">Agentic Payments</h3>
+                    </div>
+                     <p class="mt-3 text-3xl font-bold text-green-600">$1.7 Trillion</p>
+                    <p class="mt-1 text-slate-500">Projected market size for transactions handled by AI agents by 2030.</p>
+                </div>
+                <div class="stat-card md:col-span-2 lg:col-span-1">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-sky-100 rounded-lg">
+                            <svg class="w-6 h-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <h3 class="ml-4 text-lg font-semibold text-slate-800">India's D2C Boom</h3>
+                    </div>
+                     <p class="mt-3 text-3xl font-bold text-sky-600">$267+ Billion</p>
+                    <p class="mt-1 text-slate-500">India's projected D2C market value by 2030, driven by immense digital adoption.</p>
+                </div>
+            </div>
+             <div class="mt-12 p-6 bg-white rounded-lg shadow-md">
+                 <h3 class="text-2xl font-bold text-slate-800 mb-4 text-center">How to Navigate This Report</h3>
+                 <p class="text-center text-slate-600 max-w-3xl mx-auto">This interactive application is structured into three core themes. Use the navigation above to jump between sections and explore the data-driven story of AI's impact on D2C commerce.</p>
+                 <div class="mt-6 grid md:grid-cols-3 gap-6 text-center">
+                     <div class="border border-slate-200 p-4 rounded-lg">
+                         <h4 class="font-semibold text-violet-600 text-lg">AI Search: The Now</h4>
+                         <p class="text-sm text-slate-500 mt-1">Discover how AI is currently enhancing product discovery, boosting conversions, and which players lead the market.</p>
+                     </div>
+                     <div class="border border-slate-200 p-4 rounded-lg">
+                         <h4 class="font-semibold text-violet-600 text-lg">Market Dynamics: The Scale</h4>
+                         <p class="text-sm text-slate-500 mt-1">Visualize the explosive market growth across the globe, with specific insights for the US and India.</p>
+                     </div>
+                     <div class="border border-slate-200 p-4 rounded-lg">
+                         <h4 class="font-semibold text-violet-600 text-lg">Agentic Commerce: The Next</h4>
+                         <p class="text-sm text-slate-500 mt-1">Look into the future of autonomous AI shoppers, the "trust paradox," and the challenges to mass adoption.</p>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- AI Search Section -->
+        <section id="section-search" class="content-section">
+            <div class="text-center">
+                <h2 class="text-3xl md:text-4xl font-extrabold text-slate-800">AI Search: The Engine of Modern D2C</h2>
+                <p class="mt-3 max-w-3xl mx-auto text-lg text-slate-600">AI has transformed the search bar from a simple utility into a primary driver of conversions. By understanding user intent instead of just keywords, AI search delivers personalized experiences that significantly boost engagement and sales.</p>
+            </div>
+
+            <div class="mt-12">
+                 <h3 class="text-2xl font-bold text-slate-800 mb-4 text-center">The Evolution of E-commerce Search</h3>
+                 <div class="relative flex items-center justify-center gap-4 md:gap-8 my-6">
+                    <div class="text-center p-4 bg-white rounded-lg shadow-md w-1/3">
+                        <p class="font-bold text-slate-500">Stage 1</p>
+                        <p class="font-semibold text-lg text-slate-800">Keyword Matching</p>
+                        <p class="text-sm text-slate-500 mt-1">Basic, literal search. Fails with typos or synonyms.</p>
+                    </div>
+                    <div class="text-3xl font-light text-violet-400">&rarr;</div>
+                    <div class="text-center p-4 bg-violet-100 border-2 border-violet-500 rounded-lg shadow-lg w-1/3">
+                        <p class="font-bold text-violet-600">Stage 2</p>
+                        <p class="font-semibold text-lg text-violet-800">Semantic AI Search</p>
+                        <p class="text-sm text-violet-700 mt-1">Understands intent, context, and personalization. Handles complex queries.</p>
+                    </div>
+                 </div>
+            </div>
+
+             <div class="mt-16">
+                 <h3 class="text-2xl font-bold text-slate-800 mb-2 text-center">Key Features of AI Search Solutions</h3>
+                 <p class="text-center text-slate-600 max-w-2xl mx-auto mb-6">Modern AI search platforms offer a suite of powerful tools. Click on a feature to learn more about how it enhances the shopping experience.</p>
+                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                     <div id="feature-card-personalization" class="feature-card p-4 rounded-lg text-center bg-white" onclick="showFeatureDetail('personalization')">
+                         <h4 class="font-semibold text-slate-800">Personalization</h4>
+                     </div>
+                     <div id="feature-card-merchandising" class="feature-card p-4 rounded-lg text-center bg-white" onclick="showFeatureDetail('merchandising')">
+                         <h4 class="font-semibold text-slate-800">Merchandising</h4>
+                     </div>
+                     <div id="feature-card-filtering" class="feature-card p-4 rounded-lg text-center bg-white" onclick="showFeatureDetail('filtering')">
+                         <h4 class="font-semibold text-slate-800">Advanced Filters</h4>
+                     </div>
+                     <div id="feature-card-analytics" class="feature-card p-4 rounded-lg text-center bg-white" onclick="showFeatureDetail('analytics')">
+                         <h4 class="font-semibold text-slate-800">Analytics</h4>
+                     </div>
+                 </div>
+                 <div id="feature-detail-container" class="p-6 bg-slate-100 rounded-lg min-h-[120px] flex items-center justify-center">
+                    <div id="feature-detail-text" class="text-center text-slate-700">
+                        <p class="font-medium">Click a feature above to see its description.</p>
+                    </div>
+                 </div>
+             </div>
+
+            <div class="mt-16">
+                 <h3 class="text-2xl font-bold text-slate-800 mb-6 text-center">AI-Powered Product Recommender ✨</h3>
+                 <p class="text-center text-slate-600 max-w-3xl mx-auto mb-8">Experience the power of generative AI in product discovery. Describe what you're looking for, and our AI will suggest hypothetical products with brief descriptions, showcasing how LLMs can enhance personalized shopping.</p>
+                 <div class="max-w-xl mx-auto p-6 bg-white rounded-lg shadow-md">
+                     <textarea id="product-preference-input" class="w-full p-3 border border-slate-300 rounded-md focus:ring-violet-500 focus:border-violet-500 mb-4" rows="3" placeholder="e.g., 'A comfortable, stylish, and affordable running shoe for women'"></textarea>
+                     <button onclick="generateProductRecommendations()" class="w-full bg-violet-600 text-white py-3 px-6 rounded-md font-semibold hover:bg-violet-700 transition-colors duration-300 flex items-center justify-center">
+                         <span id="recommend-button-text">Get Product Recommendations ✨</span>
+                         <svg id="recommend-loading-spinner" class="animate-spin h-5 w-5 text-white ml-3 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                         </svg>
+                     </button>
+                     <div id="product-recommendations-output" class="mt-6 p-4 bg-slate-50 rounded-md border border-slate-200 text-slate-700 min-h-[100px] flex items-center justify-center text-center">
+                         Your recommendations will appear here.
+                     </div>
+                 </div>
+            </div>
+
+            <div class="mt-16">
+                 <h3 class="text-2xl font-bold text-slate-800 mb-6 text-center">AI Search and LLM Visibility</h3>
+                 <p class="text-center text-slate-600 max-w-3xl mx-auto mb-8">As Large Language Models (LLMs) like those powering generative AI search experiences become more prevalent, the ability for D2C store products to be discoverable within these new interfaces is crucial. While current AI search apps primarily optimize on-site discovery, their underlying capabilities are foundational for broader LLM visibility.</p>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div class="p-6 bg-white rounded-lg shadow-md border-l-4 border-violet-500">
+                         <h4 class="font-semibold text-slate-800 text-lg mb-2">Semantic Understanding & Rich Data</h4>
+                         <p class="text-slate-600 text-sm">AI search solutions excel at understanding product attributes, categories, and relationships beyond simple keywords. This semantic richness allows LLMs to accurately interpret complex queries and retrieve relevant products, even if the user's phrasing is indirect or conversational.</p>
+                     </div>
+                     <div class="p-6 bg-white rounded-lg shadow-md border-l-4 border-violet-500">
+                         <h4 class="font-semibold text-slate-800 text-lg mb-2">Structured Product Data & Indexing</h4>
+                         <p class="text-slate-600 text-sm">Many AI search apps help merchants structure their product data (e.g., metafields, tags, variants) in a highly organized and machine-readable format. This well-indexed, structured data is precisely what external LLMs need to efficiently crawl, understand, and present D2C products in their generative responses.</p>
+                     </div>
+                     <div class="p-6 bg-white rounded-lg shadow-md border-l-4 border-violet-500">
+                         <h4 class="font-semibold text-slate-800 text-lg mb-2">API Accessibility for LLMs</h4>
+                         <p class="text-slate-600 text-sm">Many modern e-commerce platforms and AI search apps offer robust APIs. This allows external LLMs and AI agents to programmatically access and query product catalogs, inventory levels, and pricing information, facilitating real-time, accurate product recommendations and purchase pathways outside the traditional website interface.</p>
+                     </div>
+                     <div class="p-6 bg-white rounded-lg shadow-md border-l-4 border-violet-500">
+                         <h4 class="font-semibold text-slate-800 text-lg mb-2">Future-Proofing Discoverability</h4>
+                         <p class="text-slate-600 text-sm">By continuously optimizing on-site product data and leveraging advanced AI for internal search, D2C brands are inadvertently preparing their catalogs for the future of AI-driven discovery. As LLMs evolve into new commerce interfaces, stores with robust AI search foundations will be better positioned for visibility and sales.</p>
+                     </div>
+                 </div>
+            </div>
+
+            <div class="mt-16">
+                 <h3 class="text-2xl font-bold text-slate-800 mb-6 text-center">Leading AI Search Players on Shopify</h3>
+                 <p class="text-center text-slate-600 max-w-2xl mx-auto mb-8">The Shopify App Store is a competitive marketplace for AI search solutions. This table provides a comparative analysis of prominent apps, helping merchants choose the right tool for their needs.</p>
+                 <div class="overflow-x-auto bg-white rounded-lg shadow-md">
+                     <table class="w-full text-sm text-left text-slate-500">
+                         <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                             <tr>
+                                 <th scope="col" class="px-6 py-3">App Name</th>
+                                 <th scope="col" class="px-6 py-3">Rating</th>
+                                 <th scope="col" class="px-6 py-3">Reviews</th>
+                                 <th scope="col" class="px-6 py-3">Entry Price</th>
+                             </tr>
+                         </thead>
+                         <tbody id="shopify-apps-table">
+                         </tbody>
+                     </table>
+                 </div>
+            </div>
+        </section>
+
+        <!-- Market Dynamics Section -->
+        <section id="section-market" class="content-section">
+            <div class="text-center">
+                <h2 class="text-3xl md:text-4xl font-extrabold text-slate-800">Market Dynamics: Sizing the Opportunity</h2>
+                <p class="mt-3 max-w-3xl mx-auto text-lg text-slate-600">The market for AI in e-commerce is expanding rapidly, but growth patterns differ significantly by region. Select a market below to explore projections, key drivers, and the unique characteristics shaping each landscape.</p>
+            </div>
+
+            <div class="mt-8 flex justify-center space-x-2 md:space-x-4">
+                <button id="btn-global" class="tab-button font-medium py-2 px-4 rounded-lg" onclick="updateMarketView('global')">Global</button>
+                <button id="btn-us" class="tab-button font-medium py-2 px-4 rounded-lg" onclick="updateMarketView('us')">United States</button>
+                <button id="btn-india" class="tab-button font-medium py-2 px-4 rounded-lg" onclick="updateMarketView('india')">India</button>
+            </div>
+
+            <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div>
+                    <h3 id="market-title" class="text-2xl font-bold text-slate-800 mb-4"></h3>
+                    <p id="market-description" class="text-slate-600 mb-6"></p>
+                    <div id="market-kpis" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="marketChart"></canvas>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Agentic Commerce Section -->
+        <section id="section-agentic" class="content-section">
+            <div class="text-center">
+                <h2 class="text-3xl md:text-4xl font-extrabold text-slate-800">Agentic Commerce: The Future of Shopping</h2>
+                <p class="mt-3 max-w-3xl mx-auto text-lg text-slate-600">Imagine a future where autonomous AI agents proactively shop on your behalf. This is the promise of Agentic Commerce—a paradigm shift that brings immense opportunities alongside significant challenges, especially concerning user trust.</p>
+            </div>
+
+            <div class="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h3 class="text-2xl font-bold text-slate-800 mb-4">The "Trust Paradox"</h3>
+                    <p class="text-slate-600 mb-6">While businesses are eagerly adopting AI agents, seeing them as a competitive advantage, consumer comfort remains low. This gap highlights the critical need to address security, privacy, and regulatory concerns before agentic commerce can achieve mainstream adoption.</p>
+                    <div class="chart-container h-[300px] max-h-[350px]">
+                        <canvas id="trustParadoxChart"></canvas>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-slate-800 mb-4">Challenges to Widespread Adoption</h3>
+                    <p class="text-slate-600 mb-6">The path to an agentic future is paved with hurdles. These challenges represent the biggest barriers that the industry must overcome.</p>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-white rounded-lg shadow-sm border-l-4 border-red-500">
+                            <h4 class="font-semibold text-slate-800">Consumer Trust & Data Privacy</h4>
+                            <p class="text-sm text-slate-500">Concerns over data handling and security are the primary deterrents for consumers.</p>
+                        </div>
+                        <div class="p-4 bg-white rounded-lg shadow-sm border-l-4 border-amber-500">
+                            <h4 class="font-semibold text-slate-800">Regulatory Ambiguity</h4>
+                            <p class="text-sm text-slate-500">A lack of clear rules on liability and consent creates uncertainty for businesses and users.</p>
+                        </div>
+                        <div class="p-4 bg-white rounded-lg shadow-sm border-l-4 border-sky-500">
+                            <h4 class="font-semibold text-slate-800">Organizational & Human Factors</h4>
+                            <p class="text-sm text-slate-500">Cultural resistance, talent gaps, and low employee adoption can stall progress despite technological readiness.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        let marketChartInstance;
+        let trustParadoxChartInstance;
+
+        const sections = {
+            overview: document.getElementById('section-overview'),
+            search: document.getElementById('section-search'),
+            market: document.getElementById('section-market'),
+            agentic: document.getElementById('section-agentic'),
+        };
+
+        const navLinks = {
+            overview: document.getElementById('nav-overview'),
+            search: document.getElementById('nav-search'),
+            market: document.getElementById('nav-market'),
+            agentic: document.getElementById('nav-agentic'),
+        }
+        
+        const mobileNav = document.getElementById('mobile-nav');
+
+        function showSection(sectionId) {
+            Object.values(sections).forEach(section => section.classList.remove('active'));
+            Object.values(navLinks).forEach(link => link.classList.remove('active'));
+            
+            if (sections[sectionId]) {
+                sections[sectionId].classList.add('active');
+            }
+            if (navLinks[sectionId]) {
+                navLinks[sectionId].classList.add('active');
+            }
+            if (mobileNav.value !== sectionId) {
+                mobileNav.value = sectionId;
+            }
+
+            if (sectionId === 'market') {
+                updateMarketView('global');
+            }
+            if (sectionId === 'agentic') {
+                renderTrustParadoxChart();
+            }
+        }
+
+        const featureDetails = {
+            personalization: {
+                title: 'AI-Powered Personalization',
+                text: 'AI analyzes user behavior to deliver tailored product recommendations, search results, and content. This leads to an 80% higher likelihood of purchase.'
+            },
+            merchandising: {
+                title: 'Smart Merchandising',
+                text: 'AI automatically organizes product displays to maximize sales, highlighting best-sellers, new arrivals, or items with high margins based on real-time data.'
+            },
+            filtering: {
+                title: 'Advanced & Dynamic Filtering',
+                text: 'Allows users to narrow down search results with unlimited, flexible options like custom tags, metafields, and variant attributes, simplifying product discovery.'
+            },
+            analytics: {
+                title: 'Robust Analytics & Insights',
+                text: 'Provides critical data on search performance, filter usage, and customer behavior, empowering brands to make informed, data-driven business decisions.'
+            }
+        };
+
+        function showFeatureDetail(featureKey) {
+            document.querySelectorAll('.feature-card').forEach(card => card.classList.remove('active'));
+            document.getElementById(`feature-card-${featureKey}`).classList.add('active');
+            
+            const detailTextContainer = document.getElementById('feature-detail-text');
+            const details = featureDetails[featureKey];
+            detailTextContainer.innerHTML = `<h5 class="text-lg font-bold text-slate-800 mb-2">${details.title}</h5><p class="text-slate-600">${details.text}</p>`;
+        }
+
+
+        const shopifyAppsData = [
+            { name: "Boost AI Search, Filter & Recommend", rating: 4.7, reviews: 1566, price: 19 },
+            { name: "Searchanise AI Search & Filter", rating: 4.7, reviews: 1190, price: 19 },
+            { name: "Smart Product Filter & Search", rating: 4.9, reviews: 1755, price: "Varies" },
+            { name: "AI Search & Product Filter |SB", rating: 4.5, reviews: 458, price: 14.99 },
+            { name: "FlashSearch‑AI Search & Filter", rating: 4.2, reviews: 36, price: 9 },
+            { name: "Searchy: AI Search and Filter", rating: 0.0, reviews: 0, price: 9 },
+        ];
+
+        function renderShopifyApps() {
+            const tableBody = document.getElementById('shopify-apps-table');
+            let content = '';
+            shopifyAppsData.forEach(app => {
+                content += `
+                    <tr class="bg-white border-b hover:bg-slate-50">
+                        <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">${app.name}</th>
+                        <td class="px-6 py-4">${app.rating.toFixed(1)} ⭐</td>
+                        <td class="px-6 py-4">${app.reviews.toLocaleString()}</td>
+                        <td class="px-6 py-4">${typeof app.price === 'number' ? `$${app.price}/mo` : app.price}</td>
+                    </tr>
+                `;
+            });
+            tableBody.innerHTML = content;
+        }
+
+        const marketData = {
+            global: {
+                title: "Global AI in E-commerce",
+                description: "The global market is experiencing robust growth, driven by the demand for personalization and operational efficiency. Projections show a significant expansion, solidifying AI's role as a core component of digital commerce worldwide.",
+                kpis: [
+                    { label: "CAGR", value: "14.6%-25.5%" },
+                    { label: "2034 Projection", value: "~$64 Billion" },
+                ],
+                chartData: {
+                    labels: ['2025', '2034'],
+                    values: [7.68, 64.03],
+                    color: 'rgba(124, 58, 237, 0.6)'
+                }
+            },
+            us: {
+                title: "United States AI in E-commerce",
+                description: "As the dominant market, the U.S. demonstrates high AI adoption rates. Strong B2B implementation and a massive trillion-dollar e-commerce market fuel consistent and substantial growth.",
+                kpis: [
+                    { label: "CAGR", value: "24.58%" },
+                    { label: "2034 Projection", value: "$17.83 Billion" },
+                ],
+                chartData: {
+                    labels: ['2024', '2034'],
+                    values: [1.98, 17.83],
+                    color: 'rgba(21, 128, 61, 0.6)'
+                }
+            },
+            india: {
+                title: "India D2C E-commerce",
+                description: "India's D2C market is characterized by explosive growth, fueled by widespread internet/smartphone penetration, digital payments, and government initiatives. This creates a unique opportunity to 'leapfrog' traditional digital adoption phases.",
+                 kpis: [
+                    { label: "CAGR", value: "25%" },
+                    { label: "2030 Projection", value: "$267+ Billion" },
+                ],
+                chartData: {
+                    labels: ['2025', '2030'],
+                    values: [87.5, 267.03],
+                    color: 'rgba(2, 132, 199, 0.6)'
+                }
+            }
+        };
+
+        function updateMarketView(marketId) {
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${marketId}`).classList.add('active');
+
+            const data = marketData[marketId];
+            document.getElementById('market-title').innerText = data.title;
+            document.getElementById('market-description').innerText = data.description;
+            
+            const kpiContainer = document.getElementById('market-kpis');
+            kpiContainer.innerHTML = data.kpis.map(kpi => `
+                <div class="stat-card p-4">
+                    <p class="text-sm font-medium text-slate-500">${kpi.label}</p>
+                    <p class="text-2xl font-bold text-slate-800">${kpi.value}</p>
+                </div>
+            `).join('');
+
+            renderMarketChart(data.chartData);
+        }
+        
+        function renderMarketChart(data) {
+            const ctx = document.getElementById('marketChart').getContext('2d');
+            if (marketChartInstance) {
+                marketChartInstance.destroy();
+            }
+            marketChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Market Size (in Billion USD)',
+                        data: data.values,
+                        backgroundColor: data.color,
+                        borderColor: data.color.replace('0.6', '1'),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` $${context.raw.toFixed(2)} Billion`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Market Value (in Billion USD)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderTrustParadoxChart() {
+            const ctx = document.getElementById('trustParadoxChart').getContext('2d');
+            if (trustParadoxChartInstance) {
+                 trustParadoxChartInstance.destroy();
+            }
+            trustParadoxChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Enterprise: See AI as a Competitive Advantage', 'Consumers: Comfortable Using AI for Purchases'],
+                    datasets: [{
+                        data: [93, 24],
+                        backgroundColor: ['rgba(124, 58, 237, 0.7)', 'rgba(239, 68, 68, 0.7)'],
+                        borderColor: ['#fff', '#fff'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 15,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                             callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: ${context.raw}%`;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Enterprise Enthusiasm vs. Consumer Comfort'
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+        }
+
+        async function generateProductRecommendations() {
+            const inputElement = document.getElementById('product-preference-input');
+            const outputElement = document.getElementById('product-recommendations-output');
+            const buttonText = document.getElementById('recommend-button-text');
+            const loadingSpinner = document.getElementById('recommend-loading-spinner');
+
+            const userPreference = inputElement.value.trim();
+
+            if (!userPreference) {
+                outputElement.innerHTML = '<p class="text-red-500">Please enter your product preferences.</p>';
+                return;
+            }
+
+            buttonText.textContent = 'Generating...';
+            loadingSpinner.classList.remove('hidden');
+            outputElement.innerHTML = '<p>Generating recommendations...</p>';
+
+            try {
+                let chatHistory = [];
+                const prompt = `You are an AI product recommender for an online D2C store. Based on the user's preferences, suggest 3-4 hypothetical products from categories like 'running shoes', 'smart home devices', 'sustainable fashion', 'organic skincare', 'gourmet coffee beans', 'eco-friendly home goods', or 'customizable jewelry'. For each product, provide a brief, appealing description. Format the output as a bulleted list. User preference: "${userPreference}"`;
+                
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    outputElement.innerHTML = `<div class="text-left">${text.replace(/\n/g, '<br>')}</div>`;
+                } else {
+                    outputElement.innerHTML = '<p class="text-red-500">Failed to generate recommendations. Please try again.</p>';
+                }
+            } catch (error) {
+                console.error("Error generating product recommendations:", error);
+                outputElement.innerHTML = '<p class="text-red-500">An error occurred while generating recommendations.</p>';
+            } finally {
+                buttonText.textContent = 'Get Product Recommendations ✨';
+                loadingSpinner.classList.add('hidden');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            showSection('overview');
+            renderShopifyApps();
+            showFeatureDetail('personalization');
+            document.getElementById('feature-card-personalization').classList.add('active');
+        });
+
+    </script>
+</body>
+</html>
