@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jumanji Card Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&display=swap');
+
+        :root {
+            --jungle-green-dark: #2a4a3a;
+            --jungle-green-medium: #3b5f4c;
+            --golden-border: #daa520;
+            --text-color: #f0e68c; /* Pale Goldenrod */
+            --button-bg: #8b4513; /* Saddle Brown */
+            --button-hover-bg: #a0522d; /* Sienn */
+            --card-bg: rgba(0, 0, 0, 0.7);
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Cinzel Decorative', serif;
+            background: url('https://images.unsplash.com/photo-1518567848419-f033a886f4a8?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D') no-repeat center center fixed;
+            background-size: cover;
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .card-container {
+            background-color: var(--card-bg);
+            border: 5px solid var(--golden-border);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 1s ease-out;
+            min-height: 250px; /* Increased height to accommodate riddle and action */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-message {
+            font-size: 1.8em;
+            line-height: 1.5;
+            margin-bottom: 10px; /* Adjusted margin */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            white-space: pre-wrap; /* Preserve newlines for riddles */
+        }
+
+        .card-action {
+            font-size: 1.2em;
+            line-height: 1.4;
+            color: #ffd700; /* Gold for action text */
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            margin-top: 10px;
+        }
+
+        .card-message.hidden, .card-action.hidden {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .card-message.revealed, .card-action.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 20px; /* Space between buttons */
+            margin-top: 30px;
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+            justify-content: center;
+        }
+
+        .draw-button, .reshuffle-button {
+            background-color: var(--button-bg);
+            color: white;
+            border: 2px solid var(--golden-border);
+            border-radius: 10px;
+            padding: 15px 30px;
+            font-family: 'Cinzel Decorative', serif;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .draw-button:hover, .reshuffle-button:hover {
+            background-color: var(--button-hover-bg);
+            transform: translateY(-3px);
+        }
+
+        .draw-button:active, .reshuffle-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .draw-button:disabled {
+            background-color: #553322; /* Darker brown for disabled */
+            cursor: not-allowed;
+            opacity: 0.7;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .card-container {
+                padding: 20px;
+                margin: 0 10px;
+                min-height: 220px;
+            }
+
+            .card-message {
+                font-size: 1.4em;
+            }
+
+            .card-action {
+                font-size: 1em;
+            }
+
+            .draw-button, .reshuffle-button {
+                padding: 12px 25px;
+                font-size: 1em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card-container {
+                padding: 15px;
+                min-height: 200px;
+            }
+
+            .card-message {
+                font-size: 1.2em;
+            }
+
+            .card-action {
+                font-size: 0.9em;
+            }
+
+            .draw-button, .reshuffle-button {
+                padding: 10px 20px;
+                font-size: 0.9em;
+            }
+            .button-group {
+                flex-direction: column; /* Stack buttons vertically on small screens */
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="card-container">
+        <p id="cardMessage" class="card-message">Draw a card to begin your Jumanji adventure...</p>
+        <p id="cardAction" class="card-action"></p>
+    </div>
+    <div class="button-group">
+        <button id="drawCardBtn" class="draw-button">Draw a Card</button>
+        <button id="reshuffleDeckBtn" class="reshuffle-button">Reshuffle Deck</button>
+    </div>
+
+    <script>
+        // Predefined list of Jumanji-style rhyming messages with associated actions
+        const cardMessages = [
+            {
+                riddle: "They fly at night, you'd better run.\nThese winged things are not much fun.",
+                action: "Action: Bats descend! All players must quickly cover their heads for 5 seconds or lose a turn."
+            },
+            {
+                riddle: "In the jungle you must wait,\nUntil the dice read five or eight.",
+                action: "Action: You are stuck! The current player cannot move until a 5 or 8 is rolled by any player."
+            },
+            {
+                riddle: "A tiny bite will make you itch,\nMake you sneeze, make you twitch.",
+                action: "Action: Giant Mosquitoes attack! All players must swat their arms for 10 seconds or move back 2 spaces."
+            },
+            {
+                riddle: "His fangs are sharp, he likes your taste,\nYour party better move post haste.",
+                action: "Action: A hungry Lion appears! The player closest to the lion's roar (decide by loudest growl) moves back 3 spaces."
+            },
+            {
+                riddle: "Don't be fooled, it isn't thunder,\nStaying put would be a blunder.",
+                action: "Action: Stampede! All players must make stomping noises for 15 seconds. If anyone stops, they move back 1 space."
+            },
+            {
+                riddle: "Beware the ground on which you stand,\nThe floor is quicker than the sand.",
+                action: "Action: Quicksand! The current player's piece sinks and they must miss their next turn."
+            },
+            {
+                riddle: "Need a hand, well you just wait,\nWe'll lend a hand, we each have eight.",
+                action: "Action: Giant Spiders! The player who drew the card must pretend to be tangled in webs for 30 seconds."
+            },
+            {
+                riddle: "You're almost there with much at stake,\nBut now the ground begins to quake.",
+                action: "Action: Earthquake! All players must shake their game pieces for 5 seconds. If a piece falls, move back 1 space."
+            },
+            {
+                riddle: "A hunter from the darkest wild,\nMakes you feel just like a child.",
+                action: "Action: Van Pelt appears! The current player must hide their game piece under their hand for 3 turns."
+            },
+            {
+                riddle: "Every month at the quarter moon,\nThere'll be a monsoon in your lagoon.",
+                action: "Action: Flash Flood! All players must move their game pieces to the nearest safe (unoccupied) space."
+            },
+            {
+                riddle: "Through thorny vines, the path is rough,\nBeware the plants, they're more than tough.",
+                action: "Action: Man-eating Plants! The player who drew the card must skip their next turn as they untangle themselves."
+            },
+            {
+                riddle: "The ground where you stand, it's not so sound,\nWith shifting earth, where dangers abound.",
+                action: "Action: Sinkhole! The current player's piece falls into a sinkhole and they must roll a 6 to escape."
+            }
+        ];
+
+        let availableMessages = [...cardMessages];
+        const cardMessageDisplay = document.getElementById('cardMessage');
+        const cardActionDisplay = document.getElementById('cardAction');
+        const drawCardBtn = document.getElementById('drawCardBtn');
+        const reshuffleDeckBtn = document.getElementById('reshuffleDeckBtn'); // Get the new reshuffle button
+
+        // Initialize AudioContext for sound generation
+        let audioContext;
+
+        /**
+         * Plays a simple drum-like sound using Web Audio API.
+         */
+        function playDrumSound() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.type = 'sine'; // A sine wave for a clean tone
+            oscillator.frequency.setValueAtTime(100, audioContext.currentTime); // Start at a low frequency
+            gainNode.gain.setValueAtTime(1, audioContext.currentTime); // Start at full volume
+
+            // Create a percussive attack and decay
+            oscillator.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.1);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.3); // Quick decay
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3); // Stop after a short duration
+        }
+
+        /**
+         * Updates the state of the "Draw a Card" button (enabled/disabled).
+         */
+        function updateDrawButtonState() {
+            if (availableMessages.length === 0) {
+                drawCardBtn.disabled = true;
+            } else {
+                drawCardBtn.disabled = false;
+            }
+        }
+
+        /**
+         * Draws a random card from the available messages.
+         * Ensures no card is repeated until the deck is exhausted.
+         * Handles visual transitions and updates button state.
+         */
+        function drawCard() {
+            if (availableMessages.length === 0) {
+                // This case should ideally be prevented by disabling the button,
+                // but as a fallback, ensure messages are displayed correctly.
+                cardMessageDisplay.classList.add('hidden');
+                cardActionDisplay.classList.add('hidden');
+                setTimeout(() => {
+                    cardMessageDisplay.textContent = "The deck is exhausted!";
+                    cardActionDisplay.textContent = "Please use the 'Reshuffle Deck' button.";
+                    cardMessageDisplay.classList.remove('hidden');
+                    cardActionDisplay.classList.remove('hidden');
+                    cardMessageDisplay.classList.add('revealed');
+                    cardActionDisplay.classList.add('revealed');
+                    updateDrawButtonState(); // Ensure button is disabled
+                }, 500);
+                return;
+            }
+
+            playDrumSound();
+
+            // Hide the current messages to prepare for the transition
+            cardMessageDisplay.classList.add('hidden');
+            cardActionDisplay.classList.add('hidden');
+
+            // After the hide transition, update content and reveal
+            setTimeout(() => {
+                const randomIndex = Math.floor(Math.random() * availableMessages.length);
+                const card = availableMessages.splice(randomIndex, 1)[0];
+
+                cardMessageDisplay.textContent = card.riddle;
+                cardActionDisplay.textContent = card.action;
+
+                cardMessageDisplay.classList.remove('hidden');
+                cardActionDisplay.classList.remove('hidden');
+                cardMessageDisplay.classList.add('revealed');
+                cardActionDisplay.classList.add('revealed');
+
+                updateDrawButtonState(); // Update button state after drawing a card
+            }, 500);
+        }
+
+        /**
+         * Reshuffles the deck, making all card messages available again.
+         * Updates the display and button state, and hides the card content until a new draw.
+         */
+        function reshuffleDeck() {
+            availableMessages = [...cardMessages]; // Reset available messages to all original messages
+
+            // Hide the current content immediately
+            cardMessageDisplay.classList.add('hidden');
+            cardActionDisplay.classList.add('hidden');
+
+            // After the transition, reset content to the initial prompt and keep it hidden
+            setTimeout(() => {
+                cardMessageDisplay.textContent = "Draw a card to begin your Jumanji adventure...";
+                cardActionDisplay.textContent = ""; // Clear the action text
+                updateDrawButtonState(); // Enable the "Draw a Card" button
+
+                // Ensure the 'revealed' class is removed so it stays hidden until the next draw
+                cardMessageDisplay.classList.remove('revealed');
+                cardActionDisplay.classList.remove('revealed');
+            }, 500);
+        }
+
+        // Event listeners for the buttons
+        drawCardBtn.addEventListener('click', drawCard);
+        reshuffleDeckBtn.addEventListener('click', reshuffleDeck);
+
+        // Initial state when the page loads: ensure the initial message is visible and button state is correct
+        document.addEventListener('DOMContentLoaded', () => {
+            cardMessageDisplay.classList.add('revealed');
+            updateDrawButtonState(); // Set initial button state
+        });
+    </script>
+</body>
+</html>
